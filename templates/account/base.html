@@ -1,0 +1,30 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Account — PlacePrep AI{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-brand">
+                <span class="logo-icon">🎯</span>
+                <span>PlacePrep <span class="text-gradient">AI</span></span>
+            </a>
+        </div>
+    </nav>
+    <main>
+        <div class="auth-container">
+            {% if messages %}
+            {% for message in messages %}
+            <div class="card" style="padding:0.5rem 1rem;margin-bottom:1rem;border-color:var(--danger);font-size:0.9rem;">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+            {% block auth_content %}{% endblock %}
+        </div>
+    </main>
+</body>
+</html>

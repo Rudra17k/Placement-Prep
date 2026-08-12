@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Results — PlacePrep AI{% endblock %}
+
+{% block content %}
+<div class="container page-content" style="max-width:800px;">
+    <div class="result-score">
+        <div class="score-circle" style="--score-deg: {{ attempt.percentage|floatformat:0 }}deg;">
+            <span class="score-number" style="color:{% if attempt.percentage >= 70 %}var(--success){% elif attempt.percentage >= 40 %}var(--warning){% else %}var(--danger){% endif %};">{{ attempt.percentage|floatformat:0 }}%</span>
+        </div>
+        <h2>{{ attempt.test.title }}</h2>
+        <p class="text-muted">{{ attempt.duration_display }} • +{{ attempt.xp_earned }} XP earned</p>
+    </div>
+
+    <div class="stats-row" style="grid-template-columns:repeat(3,1fr);">
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--success);">{{ attempt.correct_answers }}</div>
+            <div class="stat-label">Correct</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--danger);">{{ attempt.wrong_answers }}</div>
+            <div class="stat-label">Wrong</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--text-muted);">{{ attempt.unanswered }}</div>
+            <div class="stat-label">Unanswered</div>
+        </div>
+    </div>
+
+    <div class="section-title mt-3">📋 Question Review</div>
+    {% for answer in answers %}
+    <div class="card mb-2" style="border-left:3px solid {% if answer.is_correct %}var(--success){% elif answer.is_answered %}var(--danger){% else %}var(--text-muted){% endif %};">
+        <div class="flex-between">
+            <span class="badge {% if answer.is_correct %}badge-easy{% elif answer.is_answered %}badge-hard{% else %}badge-medium{% endif %}">
+                {% if answer.is_correct %}✓ Correct{% elif answer.is_answered %}✗ Wrong{% else %}— Skipped{% endif %}
+            </span>
+            <span class="badge badge-{{ answer.question.difficulty }}">{{ answer.question.get_difficulty_display }}</span>
+        </div>
+        <div class="mt-1" style="line-height:1.6;">{{ answer.question.text|truncatechars:200 }}</div>
+        {% if answer.is_answered and not answer.is_correct %}
+        <div class="text-sm mt-1">
+            <span style="color:var(--danger);">Your answer: {{ answer.selected_option }}</span> •
+            <span style="color:var(--success);">Correct: {{ answer.question.correct_option }}</span>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="flex gap-2 mt-3">
+        <a href="{% url 'test_list' %}" class="btn btn-secondary">← All Tests</a>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">Dashboard →</a>
+    </div>
+</div>
+{% endblock %}

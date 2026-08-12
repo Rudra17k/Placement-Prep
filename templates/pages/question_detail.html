@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Question — PlacePrep AI{% endblock %}
+
+{% block content %}
+<div class="container page-content" style="max-width:800px;">
+    <div class="flex-between mb-2">
+        <div>
+            <span class="badge badge-{{ question.difficulty }}">{{ question.get_difficulty_display }}</span>
+            <span class="text-muted text-sm" style="margin-left:0.5rem;">{{ question.topic.name }}</span>
+        </div>
+        <div class="flex gap-2 align-center">
+            <button type="button" id="btn-get-hint" class="btn btn-sm btn-secondary" onclick="fetchAIHint()">
+                💡 Get AI Hint
+            </button>
+            <span class="text-sm text-muted">{{ question.success_rate }}% success rate</span>
+        </div>
+    </div>
+
+    <!-- AI Hint Box (Hidden by default) -->
+    <div id="ai-hint-box" class="card mb-3" style="display:none; border-color: var(--accent); background: rgba(100, 216, 255, 0.05);">
+        <div class="flex-between">
+            <div class="section-title" style="margin-bottom: 0;">💡 AI Socratic Hint</div>
+            <span class="badge badge-accent">Gemma AI</span>
+        </div>
+        <div id="ai-hint-text" style="margin-top:0.5rem; line-height: 1.6; color: var(--text-primary);">
+            <span class="text-muted">Asking Gemma for a hint... ⏳</span>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div style="font-size:1.1rem;line-height:1.7;">{{ question.text }}</div>
+    </div>
+
+    <form method="post" id="answer-form">
+        {% csrf_token %}
+        {% for opt in question.options %}
+        <label class="option-card {% if user_answered %}{% if opt.key == question.correct_option %}correct{% elif opt.key == selected %}wrong{% endif %}{% elif selected == opt.key %}selected{% endif %}"
+               {% if not user_answered %}onclick="this.querySelector('input').checked=true; document.querySelectorAll('.option-card').forEach(c=>c.classList.remove('selected')); this.classList.add('selected');"{% endif %}>
+            <input type="radio" name="answer" value="{{ opt.key }}" style="display:none;"
+                   {% if user_answered %}disabled{% endif %}
+                   {% if selected == opt.key %}checked{% endif %}>
+            <span class="option-key">{{ opt.key }}</span>
+            <span>{{ opt.text }}</span>
+            {% if user_answered and opt.key == question.correct_option %}
+            <span style="margin-left:auto;color:var(--success);font-weight:600;">✓ Correct</span>
+            {% elif user_answered and opt.key == selected and not is_correct %}
+            <span style="margin-left:auto;color:var(--danger);font-weight:600;">✗ Wrong</span>
+            {% endif %}
+        </label>
+        {% endfor %}
+
+        {% if not user_answered %}
+        <button type="submit" class="btn btn-primary btn-lg btn-block mt-2">Submit Answer</button>
+        {% endif %}
+    </form>
+
+    {% if user_answered %}
+    <!-- Result Banner -->
+    <div class="card mt-3" style="border-color:{% if is_correct %}var(--success){% else %}var(--danger){% endif %};">
+        <div style="font-size:1.25rem;font-weight:700;color:{% if is_correct %}var(--success){% else %}var(--danger){% endif %};">
+            {% if is_correct %}🎉 Correct! +{% if question.difficulty == 'easy' %}10{% elif question.difficulty == 'medium' %}25{% else %}50{% endif %} XP{% else %}❌ Incorrect{% endif %}
+        </div>
+    </div>
+
+    {% if question.explanation %}
+    <div class="card mt-2">
+        <div class="section-title">💡 Explanation</div>
+        <div style="line-height:1.8;">{{ question.explanation }}</div>
+    </div>
+    {% endif %}
+
+    {% if question.shortcut_method %}
+    <div class="card mt-2" style="border-color:var(--accent);">
+        <div class="section-title">⚡ Shortcut Method</div>
+        <div style="line-height:1.8;">{{ question.shortcut_method }}</div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Interactive AI Doubt Solver Widget -->
+    <div class="card mt-3" style="border-color: var(--border-focus); background: var(--bg-secondary);">
+        <div class="flex-between mb-2">
+            <div class="section-title" style="margin-bottom:0;">🤖 Ask AI Tutor</div>
+            <span class="badge badge-accent">Interactive Q&A</span>
+        </div>
+        <div class="text-sm text-muted mb-2">Have a question or doubt about this problem? Ask Gemma for instant step-by-step guidance!</div>
+        
+        <div id="ai-chat-history" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
+            <!-- Messages render here -->
+        </div>
+
+        <div class="flex gap-2">
+            <input type="text" id="ai-user-query" class="form-input" style="flex:1;" placeholder="e.g. Why do we convert km/h to m/s? Or explain step 1 again..." onkeypress="if(event.key==='Enter') askAIDoubt();">
+            <button type="button" class="btn btn-primary" onclick="askAIDoubt()">Ask AI</button>
+        </div>
+    </div>
+
+    <div class="flex gap-2 mt-3">
+        <a href="{% url 'topic_questions' question.topic.slug %}" class="btn btn-secondary">← Back to {{ question.topic.name }}</a>
+        {% if next_question %}
+        <a href="{% url 'question_detail' next_question.pk %}" class="btn btn-primary">Next Question →</a>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    const QUESTION_ID = {{ question.id }};
+
+    function fetchAIHint() {
+        const hintBox = document.getElementById('ai-hint-box');
+        const hintText = document.getElementById('ai-hint-text');
+        hintBox.style.display = 'block';
+        hintText.innerHTML = '<span class="text-muted">Asking Gemma for a hint... ⏳</span>';
+
+        fetch("{% url 'api_ai_hint' %}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question_id: QUESTION_ID })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                hintText.innerHTML = data.hint;
+            } else {
+                hintText.innerHTML = '<span class="text-danger">Failed to get hint.</span>';
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            hintText.innerHTML = '<span class="text-muted">Unable to reach AI server.</span>';
+        });
+    }
+
+    function askAIDoubt() {
+        const queryInput = document.getElementById('ai-user-query');
+        const query = queryInput.value.trim();
+        if (!query) return;
+
+        const chatHistory = document.getElementById('ai-chat-history');
+
+        // Append user question
+        const userMsg = document.createElement('div');
+        userMsg.style.cssText = "align-self: flex-end; background: var(--bg-card-hover); padding: 0.6rem 1rem; border-radius: 12px; max-width: 80%; border: 1px solid var(--border);";
+        userMsg.innerHTML = "<strong>You:</strong> " + escapeHtml(query);
+        chatHistory.appendChild(userMsg);
+
+        queryInput.value = '';
+
+        // Append AI loading message
+        const aiMsg = document.createElement('div');
+        aiMsg.style.cssText = "align-self: flex-start; background: var(--bg-card); padding: 0.6rem 1rem; border-radius: 12px; max-width: 85%; border: 1px solid var(--border-focus);";
+        aiMsg.innerHTML = "<strong>Gemma AI:</strong> <span>Thinking... ⏳</span>";
+        chatHistory.appendChild(aiMsg);
+
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+        fetch("{% url 'api_ai_ask' %}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question_id: QUESTION_ID, query: query })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                aiMsg.innerHTML = "<strong>Gemma AI:</strong> " + data.answer.replace(/\n/g, '<br>');
+            } else {
+                aiMsg.innerHTML = "<strong>Gemma AI:</strong> <span class='text-danger'>Sorry, I couldn't process that query.</span>";
+            }
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        })
+        .catch(err => {
+            console.error(err);
+            aiMsg.innerHTML = "<strong>Gemma AI:</strong> <span class='text-muted'>Error connecting to AI.</span>";
+        });
+    }
+
+    function escapeHtml(text) {
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+</script>
+{% endblock %}
+

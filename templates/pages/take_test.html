@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ test.title }} — PlacePrep AI{% endblock %}
+
+{% block content %}
+<div class="test-header">
+    <div>
+        <strong>{{ test.title }}</strong>
+        <span class="text-sm text-muted" style="margin-left:0.5rem;">{{ test.total_questions }} Questions</span>
+    </div>
+    <div class="timer" id="timer">⏱️ <span id="timer-display">--:--</span></div>
+    <form method="post" action="{% url 'submit_test' attempt.id %}" id="submit-form">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Submit test? You cannot change answers after submission.')">Submit Test</button>
+    </form>
+</div>
+
+<div class="container" style="display:grid;grid-template-columns:1fr 250px;gap:1.5rem;padding:1.5rem 0;">
+    <!-- Questions Area -->
+    <div id="questions-area">
+        {% for tq in questions %}
+        <div class="question-slide" id="q-{{ forloop.counter }}" style="{% if not forloop.first %}display:none;{% endif %}">
+            <div class="card">
+                <div class="flex-between mb-2">
+                    <span class="text-muted text-sm">Question {{ forloop.counter }} of {{ questions|length }}</span>
+                    <span class="badge badge-{{ tq.question.difficulty }}">{{ tq.question.get_difficulty_display }}</span>
+                </div>
+                <div style="font-size:1.05rem;line-height:1.7;margin-bottom:1.5rem;">{{ tq.question.text }}</div>
+
+                {% for opt in tq.question.options %}
+                <div class="option-card" data-question="{{ tq.question.id }}" data-option="{{ opt.key }}"
+                     onclick="selectOption(this, {{ tq.question.id }}, '{{ opt.key }}', {{ forloop.parentloop.counter }})">
+                    <span class="option-key">{{ opt.key }}</span>
+                    <span>{{ opt.text }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="flex-between mt-2">
+                {% if not forloop.first %}
+                <button class="btn btn-secondary" onclick="showQuestion({{ forloop.counter|add:'-1' }})">← Previous</button>
+                {% else %}<div></div>{% endif %}
+
+                {% if not forloop.last %}
+                <button class="btn btn-primary" onclick="showQuestion({{ forloop.counter|add:'1' }})">Next →</button>
+                {% else %}
+                <button class="btn btn-success" onclick="document.getElementById('submit-form').querySelector('button').click()">Finish Test</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Question Navigator -->
+    <div>
+        <div class="card" style="position:sticky;top:80px;">
+            <div class="section-title text-sm">Question Navigator</div>
+            <div class="question-nav">
+                {% for tq in questions %}
+                <button class="q-nav-btn {% if forloop.first %}active{% endif %}"
+                        id="nav-{{ forloop.counter }}"
+                        onclick="showQuestion({{ forloop.counter }})">{{ forloop.counter }}</button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+const CSRF = '{{ csrf_token }}';
+const ATTEMPT_ID = {{ attempt.id }};
+let remaining = {{ remaining_seconds }};
+let currentQ = 1;
+
+// Timer
+function updateTimer() {
+    if (remaining <= 0) {
+        document.getElementById('submit-form').submit();
+        return;
+    }
+    remaining--;
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    const display = document.getElementById('timer-display');
+    display.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (remaining < 120) document.getElementById('timer').classList.add('danger');
+}
+setInterval(updateTimer, 1000);
+updateTimer();
+
+function showQuestion(num) {
+    document.querySelectorAll('.question-slide').forEach(el => el.style.display = 'none');
+    document.getElementById('q-' + num).style.display = 'block';
+    document.querySelectorAll('.q-nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('nav-' + num).classList.add('active');
+    currentQ = num;
+}
+
+function selectOption(el, questionId, optionKey, qNum) {
+    // Visual update
+    el.parentElement.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+
+    // Mark navigator as answered
+    document.getElementById('nav-' + qNum).classList.add('answered');
+
+    // Save to server
+    fetch(`/api/tests/attempt/${ATTEMPT_ID}/save-answer/`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json', 'X-CSRFToken': CSRF},
+        body: JSON.stringify({question_id: questionId, selected_option: optionKey})
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}

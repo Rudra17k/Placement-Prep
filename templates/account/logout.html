@@ -1,0 +1,10 @@
+{% extends "account/base.html" %}
+{% block title %}Sign Out — PlacePrep AI{% endblock %}
+
+{% block auth_content %}
+<div class="auth-title">
+    <h2>Sign Out</h2>
+    <p class="text-muted text-sm">You have been signed out successfully.</p>
+</div>
+<a href="{% url 'account_login' %}" class="btn btn-primary btn-block">Sign In Again</a>
+{% endblock %}

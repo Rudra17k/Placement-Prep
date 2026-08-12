@@ -1,0 +1,66 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PlacePrep AI — Smart placement preparation with AI-powered learning, mock tests, and company-specific practice.">
+    <title>{% block title %}PlacePrep AI{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if user.is_authenticated %}
+    <nav class="navbar" id="main-navbar">
+        <div class="container">
+            <a href="{% url 'dashboard' %}" class="nav-brand">
+                <span class="logo-icon">🎯</span>
+                <span>PlacePrep <span class="text-gradient">AI</span></span>
+            </a>
+
+            <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Toggle navigation">☰</button>
+
+            <ul class="nav-links" id="nav-links">
+                <li><a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a></li>
+                <li><a href="{% url 'practice' %}" class="{% if 'practice' in request.path %}active{% endif %}">Practice</a></li>
+                <li><a href="{% url 'company_list' %}" class="{% if 'companies' in request.path %}active{% endif %}">Companies</a></li>
+                <li><a href="{% url 'test_list' %}" class="{% if 'tests' in request.path %}active{% endif %}">Mock Tests</a></li>
+                <li><a href="{% url 'leaderboard' %}" class="{% if 'leaderboard' in request.path %}active{% endif %}">Leaderboard</a></li>
+            </ul>
+
+            <div class="nav-right">
+                <div class="nav-streak" title="Current streak">🔥 {{ user.profile.streak_count }}</div>
+                <div class="nav-xp" title="Experience points">⚡ {{ user.profile.xp_points }} XP</div>
+                <a href="{% url 'profile' %}" class="nav-avatar" title="{{ user.email }}">
+                    {{ user.email|first|upper }}
+                </a>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    {% if messages %}
+    <div class="container" style="padding-top:1rem;">
+        {% for message in messages %}
+        <div class="card" style="padding:0.75rem 1.25rem;margin-bottom:0.5rem;border-color:{% if message.tags == 'error' %}var(--danger){% elif message.tags == 'success' %}var(--success){% else %}var(--accent){% endif %};">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if user.is_authenticated %}
+    <footer class="footer">
+        <div class="container">
+            PlacePrep AI — Smart placement preparation 🚀 &copy; 2026
+        </div>
+    </footer>
+    {% endif %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

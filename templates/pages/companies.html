@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Companies — PlacePrep AI{% endblock %}
+
+{% block content %}
+<div class="container page-content">
+    <h1>Company <span class="text-gradient">Preparation</span></h1>
+    <p class="text-muted mb-3">Practice company-specific questions and take mock OA tests.</p>
+
+    <div class="grid-3">
+        {% for company in companies %}
+        <a href="{% url 'company_detail' company.slug %}" class="card" style="text-decoration:none;color:inherit;">
+            <div style="font-size:2.5rem;margin-bottom:0.75rem;">{{ company.logo_emoji }}</div>
+            <div class="card-title">{{ company.name }}</div>
+            <div class="flex gap-1 mt-1">
+                <span class="badge badge-{{ company.difficulty_level }}">{{ company.get_difficulty_level_display }}</span>
+                {% if company.avg_package_lpa %}
+                <span class="badge badge-accent">₹{{ company.avg_package_lpa }} LPA</span>
+                {% endif %}
+            </div>
+            <div class="text-sm text-muted mt-1">{{ company.total_questions }} questions</div>
+        </a>
+        {% empty %}
+        <p class="text-muted">No companies added yet. Check back soon!</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

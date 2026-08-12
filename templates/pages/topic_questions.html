@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ topic.name }} — PlacePrep AI{% endblock %}
+
+{% block content %}
+<div class="container page-content">
+    <div class="flex-between mb-3">
+        <div>
+            <h1>{{ topic.icon }} {{ topic.name }}</h1>
+            <p class="text-muted">{{ topic.get_category_display }} • {{ questions.count }} questions</p>
+        </div>
+        <div class="stat-card" style="min-width:100px;">
+            <div class="stat-value" style="color:{% if mastery.mastery_percent >= 70 %}var(--success){% elif mastery.mastery_percent >= 40 %}var(--warning){% else %}var(--accent-light){% endif %};">{{ mastery.mastery_percent }}%</div>
+            <div class="stat-label">Mastery</div>
+        </div>
+    </div>
+
+    <!-- Difficulty Filter -->
+    <div class="flex gap-1 mb-3">
+        <a href="{% url 'topic_questions' topic.slug %}" class="btn btn-sm {% if not current_difficulty %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+        <a href="?difficulty=easy" class="btn btn-sm {% if current_difficulty == 'easy' %}btn-primary{% else %}btn-secondary{% endif %}">🟢 Easy</a>
+        <a href="?difficulty=medium" class="btn btn-sm {% if current_difficulty == 'medium' %}btn-primary{% else %}btn-secondary{% endif %}">🟡 Medium</a>
+        <a href="?difficulty=hard" class="btn btn-sm {% if current_difficulty == 'hard' %}btn-primary{% else %}btn-secondary{% endif %}">🔴 Hard</a>
+    </div>
+
+    {% for q in questions %}
+    <a href="{% url 'question_detail' q.pk %}" class="card mb-2" style="display:block;text-decoration:none;color:inherit;">
+        <div class="flex-between">
+            <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;">
+                    <span class="badge badge-{{ q.difficulty }}">{{ q.get_difficulty_display }}</span>
+                    {% for c in q.companies.all %}
+                    <span class="badge badge-accent">{{ c.name }}</span>
+                    {% endfor %}
+                </div>
+                <div>{{ q.text|truncatechars:150 }}</div>
+                <div class="text-sm text-muted mt-1">{{ q.success_rate }}% success rate • {{ q.times_attempted }} attempts</div>
+            </div>
+            <span style="font-size:1.2rem;color:var(--text-muted);">→</span>
+        </div>
+    </a>
+    {% empty %}
+    <div class="card text-center">
+        <p class="text-muted">No questions available for this filter. Try a different difficulty level.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

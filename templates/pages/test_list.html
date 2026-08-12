@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Mock Tests — PlacePrep AI{% endblock %}
+
+{% block content %}
+<div class="container page-content">
+    <h1>Mock <span class="text-gradient">Tests</span></h1>
+    <p class="text-muted mb-3">Simulate real placement OA environments with timed tests.</p>
+
+    <div class="grid-2">
+        {% for test in tests %}
+        <div class="card">
+            <div class="flex-between">
+                <div>
+                    <div class="card-title">{{ test.title }}</div>
+                    <div class="text-sm text-muted mt-1">
+                        {% if test.company %}{{ test.company.name }} • {% endif %}
+                        {{ test.total_questions }} Questions • {{ test.duration_minutes }} min
+                    </div>
+                    <div class="flex gap-1 mt-1">
+                        <span class="badge badge-{{ test.difficulty }}">{{ test.get_difficulty_display }}</span>
+                        {% if test.negative_marking %}<span class="badge badge-hard">Negative Marking</span>{% endif %}
+                        <span class="badge badge-accent">{{ test.times_taken }} taken</span>
+                    </div>
+                </div>
+                <a href="{% url 'start_test' test.slug %}" class="btn btn-primary">Start Test</a>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-muted">No tests available yet. Check back soon!</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

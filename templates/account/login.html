@@ -1,0 +1,100 @@
+{% extends "account/base.html" %}
+{% block title %}Sign In — PlacePrep AI{% endblock %}
+
+{% block auth_content %}
+<div class="auth-title">
+    <h2>Welcome back 👋</h2>
+    <p class="text-muted text-sm">Sign in to continue your preparation</p>
+</div>
+
+<form method="post" action="{% url 'account_login' %}">
+    {% csrf_token %}
+    <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" name="login" class="form-input" placeholder="you@email.com" required>
+    </div>
+    <div class="form-group">
+        <label class="form-label" for="id_login_password">Password</label>
+        <div class="password-input-wrapper">
+            <input type="password" id="id_login_password" name="password" class="form-input" placeholder="••••••••" required>
+            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('id_login_password', this)" aria-label="Toggle password visibility" title="Show/Hide Password">
+                <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </button>
+        </div>
+    </div>
+    {% if form.errors %}
+    <div style="color:var(--danger);font-size:0.85rem;margin-bottom:1rem;">Invalid email or password. Please try again.</div>
+    {% endif %}
+    <button type="submit" class="btn btn-primary btn-block btn-lg">Sign In</button>
+</form>
+
+<div class="auth-divider">or</div>
+
+<a href="{% url 'account_signup' %}" class="btn btn-secondary btn-block">Create an Account</a>
+
+<style>
+.password-input-wrapper {
+    position: relative !important;
+    width: 100% !important;
+    display: block !important;
+}
+.password-input-wrapper .form-input {
+    width: 100% !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    padding-right: 3rem !important;
+}
+.password-toggle-btn {
+    position: absolute !important;
+    right: 1rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: none !important;
+    border: none !important;
+    color: var(--text-secondary) !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 6px !important;
+    z-index: 10 !important;
+    transition: all 0.15s ease !important;
+}
+.password-toggle-btn:hover {
+    color: var(--text-primary) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+.password-toggle-btn:focus {
+    outline: none !important;
+}
+.password-toggle-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+    display: block !important;
+    pointer-events: none !important;
+}
+</style>
+
+<script>
+function togglePasswordVisibility(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    
+    const svg = btn.querySelector('svg');
+    if (isPassword) {
+        svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+    } else {
+        svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+    }
+}
+</script>
+{% endblock %}

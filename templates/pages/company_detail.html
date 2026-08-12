@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ company.name }} — PlacePrep AI{% endblock %}
+
+{% block content %}
+<div class="container page-content">
+    <div class="flex gap-2 mb-3" style="align-items:flex-start;">
+        <div style="font-size:3rem;">{{ company.logo_emoji }}</div>
+        <div>
+            <h1>{{ company.name }}</h1>
+            <div class="flex gap-1 mt-1">
+                <span class="badge badge-{{ company.difficulty_level }}">{{ company.get_difficulty_level_display }}</span>
+                {% if company.avg_package_lpa %}<span class="badge badge-accent">₹{{ company.avg_package_lpa }} LPA</span>{% endif %}
+            </div>
+            {% if company.description %}<p class="text-muted mt-1">{{ company.description }}</p>{% endif %}
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div>
+            <!-- Mock Tests -->
+            <div class="section-title">⏱️ Mock Tests</div>
+            {% for test in mock_tests %}
+            <div class="card mb-2">
+                <div class="flex-between">
+                    <div>
+                        <div class="card-title">{{ test.title }}</div>
+                        <div class="text-sm text-muted">{{ test.total_questions }} Qs • {{ test.duration_minutes }} min • {{ test.times_taken }} attempts</div>
+                    </div>
+                    <a href="{% url 'start_test' test.slug %}" class="btn btn-primary btn-sm">Start</a>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted text-sm">No mock tests available yet for {{ company.name }}.</p>
+            {% endfor %}
+        </div>
+
+        <div>
+            <!-- Recent Questions -->
+            <div class="section-title">📝 Recent Questions</div>
+            {% for q in recent_questions %}
+            <a href="{% url 'question_detail' q.pk %}" class="card mb-2" style="display:block;text-decoration:none;color:inherit;">
+                <span class="badge badge-{{ q.difficulty }}" style="margin-bottom:0.4rem;">{{ q.get_difficulty_display }}</span>
+                <div class="text-sm">{{ q.text|truncatechars:120 }}</div>
+            </a>
+            {% empty %}
+            <p class="text-muted text-sm">No questions tagged for {{ company.name }} yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

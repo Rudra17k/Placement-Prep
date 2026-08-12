@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Practice — PlacePrep AI{% endblock %}
+
+{% block content %}
+<div class="container page-content">
+    <h1>Practice <span class="text-gradient">Questions</span></h1>
+    <p class="text-muted mb-3">Choose a category and topic to start practicing.</p>
+
+    {% for category in categories %}
+    <div class="mb-3">
+        <div class="section-title">
+            {% if category.key == 'aptitude' %}🔢{% elif category.key == 'reasoning' %}🧩{% elif category.key == 'verbal' %}📖{% else %}📊{% endif %}
+            {{ category.name }}
+        </div>
+        <div class="grid-4">
+            {% for topic in category.topics %}
+            <a href="{% url 'topic_questions' topic.slug %}" class="card" style="text-decoration:none;color:inherit;">
+                <div style="font-size:1.5rem;margin-bottom:0.5rem;">{{ topic.icon }}</div>
+                <div class="card-title">{{ topic.name }}</div>
+                <div class="card-subtitle">{{ topic.q_count }} question{{ topic.q_count|pluralize }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

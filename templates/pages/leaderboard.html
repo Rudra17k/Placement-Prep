@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard — PlacePrep AI{% endblock %}
+
+{% block content %}
+<div class="container page-content" style="max-width:700px;">
+    <h1>🏆 <span class="text-gradient">Leaderboard</span></h1>
+    <p class="text-muted mb-3">Top performers on PlacePrep AI. Your rank: <strong>#{{ user_rank }}</strong></p>
+
+    <div class="card">
+        {% for profile in top_users %}
+        <div class="leaderboard-row {% if profile.user == request.user %}current-user{% endif %}">
+            <span class="rank-badge {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+                {% if forloop.counter <= 3 %}{% if forloop.counter == 1 %}👑{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}{% else %}{{ forloop.counter }}{% endif %}
+            </span>
+            <div class="nav-avatar" style="width:32px;height:32px;font-size:0.8rem;">{{ profile.user.email|first|upper }}</div>
+            <div style="flex:1;">
+                <div class="font-bold text-sm">{{ profile.user.first_name|default:profile.user.email|truncatechars:25 }}</div>
+                <div class="text-sm text-muted">Level {{ profile.level }} • 🔥 {{ profile.streak_count }}</div>
+            </div>
+            <div style="text-align:right;">
+                <div class="font-bold" style="color:var(--accent-light);">{{ profile.xp_points }} XP</div>
+                <div class="text-sm text-muted">{{ profile.accuracy_percent }}% acc</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

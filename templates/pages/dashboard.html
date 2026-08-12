@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — PlacePrep AI{% endblock %}
+
+{% block content %}
+<div class="container page-content">
+    <div class="dashboard-header">
+        <div>
+            <div class="welcome-text">Welcome back, {{ user.first_name|default:user.email|truncatechars:20 }} 👋</div>
+            <div class="welcome-sub">Level {{ profile.level }} • {{ profile.xp_points }} XP earned</div>
+        </div>
+        <a href="{% url 'practice' %}" class="btn btn-primary">Practice Now →</a>
+    </div>
+
+    <!-- AI Study Assistant -->
+    <div class="card mb-3" style="border-color: var(--accent); background: linear-gradient(145deg, rgba(30,30,40,1) 0%, rgba(40,30,50,1) 100%);">
+        <div class="flex-between">
+            <div class="section-title" style="margin-bottom: 0;">🤖 AI Study Assistant</div>
+            <span class="badge badge-accent">Powered by AI Engine</span>
+        </div>
+        <div id="ai-insight-content" style="margin-top: 1rem; line-height: 1.6; color: #e0e0e0;">
+            <span class="text-muted">Analyzing your performance data... ⏳</span>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="streak-card">
+            <div class="streak-value">{{ profile.streak_count }}</div>
+            <div class="streak-label">🔥 Day Streak</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--accent-light);">{{ profile.total_questions_attempted }}</div>
+            <div class="stat-label">Questions Solved</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--success);">{{ profile.accuracy_percent }}%</div>
+            <div class="stat-label">Accuracy</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--warning);">{{ profile.total_tests_taken }}</div>
+            <div class="stat-label">Tests Taken</div>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <!-- Category Mastery -->
+        <div class="card">
+            <div class="section-title">📊 Category Mastery</div>
+            {% for cat in category_stats %}
+            <div class="mastery-item">
+                <span class="mastery-name">{{ cat.name }}</span>
+                <span class="mastery-value" style="color:{% if cat.mastery >= 70 %}var(--success){% elif cat.mastery >= 40 %}var(--warning){% else %}var(--danger){% endif %}">{{ cat.mastery }}%</span>
+                <div class="mastery-bar">
+                    <div class="progress-bar">
+                        <div class="progress-fill {% if cat.mastery >= 70 %}success{% elif cat.mastery >= 40 %}warning{% else %}danger{% endif %}" style="width:{{ cat.mastery }}%"></div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted text-sm">Start practicing to see your mastery here!</p>
+            {% endfor %}
+        </div>
+
+        <!-- Weak Areas -->
+        <div class="card">
+            <div class="section-title">⚠️ Focus Areas</div>
+            {% for m in weak_topics %}
+            <div class="mastery-item">
+                <span class="badge badge-hard" style="font-size:0.7rem;">Weak</span>
+                <span class="mastery-name">{{ m.topic.name }}</span>
+                <span class="mastery-value" style="color:var(--danger);">{{ m.mastery_percent }}%</span>
+                <a href="{% url 'topic_questions' m.topic.slug %}" class="btn btn-sm btn-secondary">Practice</a>
+            </div>
+            {% empty %}
+            <p class="text-muted text-sm">No weak areas detected yet. Keep practicing!</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recent Attempts -->
+    <div class="card mt-3">
+        <div class="section-title">📝 Recent Tests</div>
+        {% for attempt in recent_attempts %}
+        <div class="leaderboard-row">
+            <div>
+                <div class="font-bold">{{ attempt.test.title }}</div>
+                <div class="text-sm text-muted">{{ attempt.completed_at|timesince }} ago • {{ attempt.duration_display }}</div>
+            </div>
+            <div style="text-align:right;">
+                <div class="font-bold" style="color:{% if attempt.percentage >= 70 %}var(--success){% elif attempt.percentage >= 40 %}var(--warning){% else %}var(--danger){% endif %}">{{ attempt.percentage }}%</div>
+                <div class="text-sm text-muted">{{ attempt.correct_answers }}/{{ attempt.total_questions }}</div>
+            </div>
+            <a href="{% url 'test_results' attempt.id %}" class="btn btn-sm btn-secondary">Review</a>
+        </div>
+        {% empty %}
+        <p class="text-muted text-sm">No tests taken yet. <a href="{% url 'test_list' %}">Take your first mock test →</a></p>
+        {% endfor %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid-3 mt-3">
+        <a href="{% url 'practice' %}" class="card" style="text-align:center;text-decoration:none;color:inherit;">
+            <div class="card-icon">📝</div>
+            <div class="card-title">Practice Questions</div>
+            <div class="card-subtitle">Topic-wise practice</div>
+        </a>
+        <a href="{% url 'test_list' %}" class="card" style="text-align:center;text-decoration:none;color:inherit;">
+            <div class="card-icon">⏱️</div>
+            <div class="card-title">Mock Tests</div>
+            <div class="card-subtitle">Timed OA simulations</div>
+        </a>
+        <a href="{% url 'company_list' %}" class="card" style="text-align:center;text-decoration:none;color:inherit;">
+            <div class="card-icon">🏢</div>
+            <div class="card-title">Companies</div>
+            <div class="card-subtitle">Company-specific prep</div>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        fetch("{% url 'api_generate_insights' %}")
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    document.getElementById('ai-insight-content').innerHTML = data.insight;
+                } else {
+                    document.getElementById('ai-insight-content').innerHTML = '<span class="text-danger">Failed to generate insights.</span>';
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching AI insights:", error);
+                document.getElementById('ai-insight-content').innerHTML = '<span class="text-muted">AI insights currently unavailable.</span>';
+            });
+    });
+</script>
+{% endblock %}
